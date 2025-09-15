@@ -1,4 +1,5 @@
 The Alexandria Project: A Causal Reasoning AI
+
 A challenge to the current AI paradigm. We built a small, causal AI that can reason, and proved its architectural superiority over a massive, statistical LLM.
 
 This repository contains the full source code, experimental logs, and final paper for the Alexandria Project. We built a 2D physics sandbox ("The Crucible") and a Causal State Machine (CSM) AI capable of perfect prediction, planning, and counterfactual reasoning within its universe.

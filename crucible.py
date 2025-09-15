@@ -6,6 +6,7 @@ import uuid
 import networkx as nx
 import pprint
 import copy
+import textwrap
 
 # --- Constants ---
 SCREEN_WIDTH = 1200
@@ -65,7 +66,6 @@ def goal_stack_two_boxes(graph):
             pos1 = box1_data['physics']['position']
             pos2 = box2_data['physics']['position']
             
-            # Check if box1 is roughly on top of box2 and they are both stable
             is_horizontally_aligned = abs(pos1[0] - pos2[0]) < 25
             is_vertically_stacked = pos1[1] < pos2[1] and abs(pos1[1] - (pos2[1] - 50)) < 10
             is_stable = box1_data['physics']['is_sleeping'] and box2_data['physics']['is_sleeping']
@@ -81,21 +81,15 @@ class CSM_Oracle:
     def _reconstruct_space_from_graph(self, graph, action=None):
         headless_space = pymunk.Space()
         headless_space.gravity = (0, 981)
-        
         headless_space.sleep_time_threshold = 0.5
         headless_space.idle_speed_threshold = 1.0
-        
         headless_world_objects = {}
-
-        if action and action.action_type == 'spawn_object':
-            pass
 
         for node_id, data in graph.nodes(data=True):
             obj_type = data['obj_type']; props = data['properties']; physics = data['physics']
             if obj_type == 'ground':
                 body = headless_space.static_body
                 shape = pymunk.Segment(body, (0, SCREEN_HEIGHT - 50), (SCREEN_WIDTH, SCREEN_HEIGHT - 50), 5)
-                # --- FIX: The ground shape was created but never added to the headless space. ---
                 headless_space.add(shape)
             else:
                 mass = props['mass']
@@ -128,7 +122,7 @@ class CSM_Planner:
     """The problem-solving component. Uses the Oracle to find a sequence of actions to achieve a goal."""
     def __init__(self, oracle):
         self.oracle = oracle
-        self.max_attempts = 100 # To prevent infinite loops
+        self.max_attempts = 100
 
     def find_plan(self, initial_state, goal_func):
         print("\n--- PLANNER: Attempting to find a plan with an intelligent strategy... ---")
@@ -138,6 +132,7 @@ class CSM_Planner:
             print("--- PLANNER: Failed. Need at least one box in the scene to act as a base. ---")
             return None
 
+        # --- FIX: The rest of this function was missing. It has been restored. ---
         base_candidates = [
             (node, data) for node, data in boxes 
             if data['physics']['is_sleeping']
@@ -177,24 +172,107 @@ class CSM_Planner:
         print(f"--- PLANNER: FAILED. No solution found after {self.max_attempts} attempts. ---")
         return None
 
+# --- New: Text Rendering and Input ---
+class TextInputBox:
+    def __init__(self, x, y, w, h, font):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = pygame.Color('lightskyblue3')
+        self.text = ""
+        self.font = font
+        self.txt_surface = self.font.render(self.text, True, self.color)
+        self.active = False
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            self.active = self.rect.collidepoint(event.pos)
+        if event.type == pygame.KEYDOWN and self.active:
+            if event.key == pygame.K_RETURN:
+                return_text = self.text
+                self.text = ""
+                return return_text
+            elif event.key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+            else:
+                self.text += event.unicode
+            self.txt_surface = self.font.render(self.text, True, pygame.Color('black'))
+        return None
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, pygame.Color('white'), self.rect)
+        pygame.draw.rect(screen, pygame.Color('black'), self.rect, 2)
+        screen.blit(self.txt_surface, (self.rect.x + 5, self.rect.y + 5))
+        if self.active:
+            pygame.draw.rect(screen, self.color, self.rect, 2)
+
+def render_text_block(screen, text, pos, font, max_width):
+    words = [word.split(' ') for word in text.splitlines()]
+    space = font.size(' ')[0]
+    x, y = pos
+    for line in words:
+        for word in line:
+            word_surface = font.render(word, 0, (0,0,0))
+            word_width, word_height = word_surface.get_size()
+            if x + word_width >= max_width:
+                x = pos[0]
+                y += word_height
+            screen.blit(word_surface, (x, y))
+            x += word_width + space
+        x = pos[0]
+        y += word_height
+
+# --- New: CSM Interface to parse commands ---
+class CSM_Interface:
+    def __init__(self, oracle, planner):
+        self.oracle = oracle
+        self.planner = planner
+
+    def process_command(self, command, current_state):
+        command = command.lower().strip()
+        print(f"CSM INTERFACE: Received command '{command}'")
+
+        if command == "predict future":
+            future_state = self.oracle.predict_future(current_state, duration_seconds=5)
+            # Find the first dynamic object to describe
+            for node, data in future_state.nodes(data=True):
+                if data['obj_type'] != 'ground':
+                    pos = data['physics']['position']
+                    return f"Prediction: The object {node} will be at position ({pos[0]}, {pos[1]}) in 5 seconds."
+            return "Prediction: All objects are static."
+
+        elif command == "plan stack":
+            plan = self.planner.find_plan(current_state, goal_stack_two_boxes)
+            if plan:
+                return f"Plan Found: {plan[0]}"
+            else:
+                return "Planner failed to find a solution."
+        
+        return "Unknown command. Try 'predict future' or 'plan stack'."
+
+
 # --- The Main Simulation Class ---
 class Crucible:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("Alexandria - 'S' State, 'P' Predict, 'G' Goal")
+        pygame.display.set_caption("Alexandria - 'T' for Text Command")
         self.clock = pygame.time.Clock()
         self.running = True
         self.space = pymunk.Space()
         self.space.gravity = (0, 981)
-        
         self.space.sleep_time_threshold = 0.5
         self.space.idle_speed_threshold = 1.0
-        
         self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
         self.world_objects = {}
+        
         self.oracle = CSM_Oracle()
         self.planner = CSM_Planner(self.oracle)
+        self.interface = CSM_Interface(self.oracle, self.planner)
+        
+        self.font = pygame.font.Font(None, 32)
+        self.input_box = TextInputBox(50, 50, SCREEN_WIDTH - 100, 40, self.font)
+        self.text_input_mode = False
+        self.csm_response_text = ""
+        
         self.add_static_ground()
 
     def add_static_ground(self):
@@ -231,28 +309,40 @@ class Crucible:
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT: self.running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            
+            if self.text_input_mode:
+                command = self.input_box.handle_event(event)
+                if command is not None:
+                    current_state = get_graph_from_space(self.space, self.world_objects)
+                    self.csm_response_text = self.interface.process_command(command, current_state)
+            
+            if event.type == pygame.MOUSEBUTTONDOWN and not self.text_input_mode:
                 if event.button == 1: self.spawn_object(event.pos)
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_s:
-                    print("\n--- CURRENT WORLD STATE ---")
-                    state_graph = get_graph_from_space(self.space, self.world_objects)
-                    for node, data in state_graph.nodes(data=True): print(f"Node: {node}"); pprint.pprint(data, indent=2)
-                elif event.key == pygame.K_p:
-                    current_state = get_graph_from_space(self.space, self.world_objects)
-                    predicted_state = self.oracle.predict_future(current_state, duration_seconds=3)
-                    print("\n--- ORACLE PREDICTION (T+3s) ---")
-                    for node, data in predicted_state.nodes(data=True): print(f"Node: {node}"); pprint.pprint(data, indent=2)
-                elif event.key == pygame.K_g:
-                    current_state = get_graph_from_space(self.space, self.world_objects)
-                    self.planner.find_plan(current_state, goal_stack_two_boxes)
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_t:
+                    self.text_input_mode = not self.text_input_mode
+                    self.input_box.active = self.text_input_mode
+                    if not self.text_input_mode:
+                        self.csm_response_text = ""
+
+    def draw(self):
+        self.screen.fill((217, 217, 217))
+        self.space.debug_draw(self.draw_options)
+        
+        if self.text_input_mode:
+            self.input_box.draw(self.screen)
+            if self.csm_response_text:
+                render_text_block(self.screen, self.csm_response_text, (50, 100), self.font, SCREEN_WIDTH - 100)
+
+        pygame.display.flip()
 
     def run(self):
         while self.running:
-            self.handle_events(); self.space.step(1/60.0)
-            self.screen.fill((217, 217, 217))
-            self.space.debug_draw(self.draw_options)
-            pygame.display.flip()
+            self.handle_events()
+            if not self.text_input_mode:
+                self.space.step(1/60.0)
+            self.draw()
             self.clock.tick(60)
         pygame.quit()
 

@@ -1,7 +1,4 @@
-The Alexandria Project: A Causal Reasoning AIA challenge to the current AI paradigm. We built a small, causal AI that can reason, and proved its architectural superiority over a massive, statistical LLM.This repository contains the full source code, experimental logs, and final paper for the Alexandria Project. We built a 2D physics sandbox ("The Crucible") and a Causal State Machine (CSM) AI capable of perfect prediction, planning, and counterfactual reasoning within its universe.We then pitted our compact, verifiable AI against a frontier-scale Large Language Model in a series of tests called "The Gauntlet." The results, detailed in our paper, provide clear evidence that for tasks requiring truth and reliability, a causal architecture is fundamentally superior to a purely statistical one.The Core ThesisModern LLMs are masters of narrative plausibility. They are trained to generate statistically likely sequences of text. They can write a beautiful essay about physics, but they cannot compute physics.The Alexandria CSM operates on a principle of computable truth. Its reasoning is not a narrative; it is the result of a verifiable experiment conducted within its internal world model. This project was designed to make that architectural difference undeniable.Project Componentscrucible.py: The complete, self-contained application. It runs the 2D physics sandbox and hosts the Causal State Machine AI.lab_notebook.md: The full experimental log containing the prompts and verbatim responses from both the CSM and the LLM for all five Gauntlet tests.paper.tex: The final, complete scientific paper detailing the project's methodology, results, and conclusions, ready for publication.Getting StartedYou can run the entire experiment on your local machine.1. Clone the repository:git clone [https://github.com/JustinArndtAI/Alexandria.git](https://github.com/JustinArndtAI/Alexandria.git)
-=======
 The Alexandria Project: A Causal Reasoning AI
-
 A challenge to the current AI paradigm. We built a small, causal AI that can reason, and proved its architectural superiority over a massive, statistical LLM.
 
 This repository contains the full source code, experimental logs, and final paper for the Alexandria Project. We built a 2D physics sandbox ("The Crucible") and a Causal State Machine (CSM) AI capable of perfect prediction, planning, and counterfactual reasoning within its universe.
@@ -26,9 +23,11 @@ You can run the entire experiment on your local machine.
 1. Clone the repository:
 
 git clone [https://github.com/JustinArndtAI/Alexandria.git](https://github.com/JustinArndtAI/Alexandria.git)
->>>>>>> c52c35b3ea563d88f230b0ecb8c0d8e0b5323fff
 cd Alexandria
-2. Set up the environment:# Create a Python virtual environment
+
+2. Set up the environment:
+
+# Create a Python virtual environment
 python -m venv venv
 
 # Activate it
@@ -39,10 +38,6 @@ source venv/bin/activate
 
 # Install the required libraries
 pip install -r requirements.txt
-<<<<<<< HEAD
-3. Run the Crucible:python crucible.py
-How to Use the CrucibleThe simulation is a fully interactive environment.Left-Click: Spawn a random object (ball, box, or domino).Precise Controls for Experiments:B: Spawn a Box at the cursor.C: Spawn a Circle (ball) at the cursor.D: Spawn a Domino at the cursor.R: Spawn a Ramp at the cursor.S: Print the full State of the universe to the console.T: Toggle the Text command interface for the CSM.The PaperOur complete findings are detailed in our paper, "A Computable Universe: Demonstrating the Architectural Superiority of Causal Models over Statistical LLMs." A pre-compiled PDF can be found in the /releases section of this repository.Why This MattersThe current paradigm, which focuses on scaling LLMs, risks investing vast resources in perfecting a system that is fundamentally incapable of the grounded reasoning necessary for high-stakes applications in science, engineering, and enterprise.This project proves that there is another path. The future of AI is not a choice between symbolic and neural systems, but their synthesis. The path forward lies in building hybrid architectures, like the CSM, that combine the perceptual power of modern networks with the rigorous, verifiable engine of a causal world model.LicenseThis project is licensed under the MIT License. See the LICENSE file for details.
-=======
 
 3. Run the Crucible:
 
